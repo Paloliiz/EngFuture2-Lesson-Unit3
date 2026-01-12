@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paragraph Master: Challenge Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Sarabun:wght@400;600&display=swap');
+        
+        :root {
+            --primary: #283593;
+            --accent: #ff6f00;
+            --bg: #e8eaf6;
+            --text: #333;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { font-family: 'Prompt', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        .container { width: 100%; max-width: 650px; background: white; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; min-height: 650px; position: relative; }
+        
+        /* Header */
+        .top-bar { padding: 15px 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .subject-name { font-size: 0.8em; opacity: 0.9; font-weight: 300; }
+        .user-display { font-size: 0.9em; font-weight: bold; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 20px; }
+
+        /* Screens */
+        .screen { padding: 30px 20px; flex: 1; display: none; flex-direction: column; align-items: center; animation: fadeIn 0.4s ease-in-out; width: 100%; }
+        .screen.active { display: flex; }
+
+        /* Typography */
+        h2 { color: var(--primary); text-align: center; margin-bottom: 20px; font-size: 1.6em; }
+        p { line-height: 1.6; margin-bottom: 15px; width: 100%; }
+        
+        .content-box { width: 100%; background: #f5f5f5; padding: 25px; border-radius: 12px; margin-bottom: 20px; font-family: 'Sarabun', sans-serif; font-size: 1.1em; text-align: left; border-left: 6px solid var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .highlight { background: #fff8e1; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #d84315; }
+        .instruction { font-size: 0.95em; color: #555; text-align: center; margin-bottom: 15px; font-style: italic; background: #e3f2fd; padding: 10px; border-radius: 8px; width: 100%; }
+
+        /* Inputs & Buttons */
+        /* กลับมาใช้ type="number" เพื่อล็อกไม่ให้พิมพ์ตัวหนังสือ */
+        input[type="number"] { padding: 15px; font-size: 1.3em; width: 80%; text-align: center; border: 2px solid #ddd; border-radius: 50px; margin: 20px 0; outline: none; font-family: 'Prompt', sans-serif; transition: 0.3s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(40, 53, 147, 0.2); }
+
+        .btn { padding: 12px 30px; border: none; border-radius: 50px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: 'Prompt', sans-serif; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #1a237e); color: white; width: 100%; max-width: 300px; }
+        .btn-primary:active { transform: scale(0.95); }
+        .btn-secondary { background: #e0e0e0; color: #555; }
+        .btn-nav-group { width: 100%; display: flex; justify-content: space-between; margin-top: auto; padding-top: 20px; }
+
+        /* Interactive Sentence */
+        .sentence-item { padding: 12px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .sentence-item:hover { border-color: var(--primary); transform: translateX(5px); }
+        .sentence-item.sel-mi { background: #c8e6c9; border-color: #2e7d32; font-weight: bold; color: #1b5e20; }
+        .sentence-item.sel-mi::before { content: '👑 MAIN IDEA: '; }
+        .sentence-item.sel-sd { background: #bbdefb; border-color: #1565c0; color: #0d47a1; }
+        .sentence-item.sel-sd::before { content: '🔹 DETAIL: '; }
+
+        /* Game Sorting */
+        .sort-area { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+        .sort-card { background: white; border: 2px solid #ddd; padding: 15px; border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: 500; transition: 0.2s; }
+        .sort-card:hover { border-color: var(--accent); }
+        .sort-card.picked { background: #cfd8dc; color: #78909c; cursor: default; border-color: #ccc; text-decoration: line-through; opacity: 0.6; }
+        .ans-slot { min-height: 60px; background: #fff3e0; border: 2px dashed var(--accent); border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-weight: bold; padding: 15px; font-size: 1.1em; }
+
+        /* Quiz Choices */
+        .quiz-container { width: 100%; }
+        .quiz-progress { text-align: right; font-size: 0.9em; color: #888; margin-bottom: 10px; }
+        .quiz-option { width: 100%; padding: 18px; text-align: left; background: white; border: 2px solid #eee; border-radius: 15px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; font-family: 'Sarabun', sans-serif; font-size: 1.1em; }
+        .quiz-option:hover { border-color: var(--primary); background: #e8eaf6; transform: translateY(-2px); }
+        .quiz-option.locked { pointer-events: none; opacity: 0.8; }
+        .quiz-option.correct { background: #a5d6a7; border-color: #388e3c; color: #1b5e20; }
+        .quiz-option.wrong { background: #ef9a9a; border-color: #d32f2f; color: #b71c1c; }
+
+        /* Certificate */
+        .cert-card { border: 10px double var(--primary); padding: 30px; margin-top: 10px; position: relative; background: #fff; width: 100%; text-align: center; overflow: hidden; }
+        .cert-title { font-size: 2em; color: var(--primary); font-weight: bold; margin: 15px 0; }
+        .cert-name { font-size: 1.8em; color: var(--accent); font-weight: bold; margin: 20px 0; border-bottom: 2px solid #eee; display: inline-block; padding-bottom: 10px; min-width: 200px; }
+        .cert-score { font-size: 3em; font-weight: bold; color: #333; }
+        .stamp { color: #c62828; border: 3px solid #c62828; display: inline-block; padding: 5px 20px; font-weight: bold; transform: rotate(-15deg); font-size: 1.5em; margin-top: 20px; opacity: 0.7; }
+        
+        /* Watermark */
+        .watermark-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.05; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; transform: rotate(-20deg) scale(1.2); }
+        .wm-item { margin: 30px; font-weight: bold; font-size: 16px; white-space: nowrap; color: #000; }
+        .cert-content { position: relative; z-index: 2; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <div>
+            <div style="font-weight:bold; font-size:1.2em;">Paragraph Master 🏆</div>
+            <div class="subject-name">ภาษาอังกฤษเพื่อการศึกษาต่อ 2 (อ30212)</div>
+        </div>
+        <div id="userDisplay" class="user-display">Guest</div>
+    </div>
+
+    <div id="screen-login" class="screen active">
+        <div style="text-align: center; margin: auto; width: 100%;">
+            <div style="font-size: 5em; margin-bottom: 10px;">🏫</div>
+            <h2>English for Future Studies 2</h2>
+            <p>Unit 3: Understanding Paragraphs</p>
+            <p style="font-size:0.9em; color:#d84315;">การเข้าใจย่อหน้า: ใจความสำคัญและรายละเอียดสนับสนุน</p>
+            
+            <input type="number" id="inputID" placeholder="กรอกรหัสนักเรียน 5 หลัก" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <br>
+            <button class="btn btn-primary" onclick="checkLogin()">เข้าสู่บทเรียน</button>
+            <p style="font-size: 0.8em; color: #999; margin-top: 30px;">(สำหรับ ม.6/3, 6/4)</p>
+            
+            <div style="margin-top: 30px; cursor: pointer; color: #e0e0e0; font-size: 0.8em;" onclick="adminReset()">
+                [ 🔄 Admin Reset ]
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-lesson" class="screen">
+        <div id="lesson-content" style="width: 100%;"></div>
+    </div>
+
+    <div id="screen-result" class="screen"></div>
+</div>
+
+<script>
+    // --- DATABASE ---
+    const students = {
+        "012345": { name: "คุณครูศรุตา จันทเกตุ", class: "Teacher", no: 99 },
+        "11456": { name: "นายวุฒิชัย ปาสา", class: "ม.6/3", no: 1 }, "11478": { name: "นายเจษฎา นุขุนทด", class: "ม.6/3", no: 2 }, "11490": { name: "นายสิรวิชญ์ คณาญาติ", class: "ม.6/3", no: 3 }, "11513": { name: "นายธนวัฒน์ ตรวจนอก", class: "ม.6/3", no: 4 }, "11516": { name: "นายปรเวช ประหูศรี", class: "ม.6/3", no: 5 }, "11519": { name: "นายรัฐพงศ์ พรมประดิษฐ์", class: "ม.6/3", no: 6 }, "11520": { name: "นายวารสาร สายศร", class: "ม.6/3", no: 7 }, "11574": { name: "นายกนกนันธ์ อำคาหล้า", class: "ม.6/3", no: 8 }, "11575": { name: "นายกฤษฎา แกมจินดา", class: "ม.6/3", no: 9 }, "11578": { name: "นายณัฐพล ปุราถาเน", class: "ม.6/3", no: 10 }, "11588": { name: "นายภาสิต พงศกุล", class: "ม.6/3", no: 11 }, "11918": { name: "นายคชาพล ครองยุติ", class: "ม.6/3", no: 12 }, "12471": { name: "นายเขมินทร์ หลาบหนองแสง", class: "ม.6/3", no: 13 }, "12472": { name: "นายณัฐวัฒน์ ด่านมณี", class: "ม.6/3", no: 14 }, "12775": { name: "นายสมเจตน์ พุทธสังข์", class: "ม.6/3", no: 16 }, "11493": { name: "นางสาวแก้วมณี ฉัตรแสนทวีสุข", class: "ม.6/3", no: 17 }, "11499": { name: "นางสาวพัชรพร ดารักษ์", class: "ม.6/3", no: 18 }, "11501": { name: "นางสาวเพ็ญพิชชา สีทอง", class: "ม.6/3", no: 19 }, "11533": { name: "นางสาวยุพารัตน์ สีแดง", class: "ม.6/3", no: 20 }, "11596": { name: "นางสาวทิพวรรณ บุญคุ่ย", class: "ม.6/3", no: 21 }, "11628": { name: "นางสาวกมลเนตร ฤทธิเดช", class: "ม.6/3", no: 22 }, "11632": { name: "นางสาวทิพรัตน์ ร่มรื่น", class: "ม.6/3", no: 23 }, "12473": { name: "นางสาวชนาภา นาชัยภูมิ", class: "ม.6/3", no: 24 }, "12474": { name: "นางสาวณัฐวิภา จันสำรวม", class: "ม.6/3", no: 25 }, "12476": { name: "นางสาววรัญญามะลิซ้อน", class: "ม.6/3", no: 26 },
+        "11484": { name: "นายธีรติ ประหูศรี", class: "ม.6/4", no: 1 }, "11518": { name: "นายภูมิพัฒณ์ สีนวล", class: "ม.6/4", no: 2 }, "11523": { name: "นายอนันต์ชัย พันชำนาญ", class: "ม.6/4", no: 3 }, "11582": { name: "นายนิคม ตราผักแว่น", class: "ม.6/4", no: 4 }, "11618": { name: "นายพีรพัฒน์ ไก่แก้ว", class: "ม.6/4", no: 5 }, "11624": { name: "นายอธิชา พลจอหอ", class: "ม.6/4", no: 6 }, "11674": { name: "นายรัตภูมิ แก่งกระโทก", class: "ม.6/4", no: 7 }, "11957": { name: "นายนิพิฐพนท์ ดาศรี", class: "ม.6/4", no: 8 }, "12228": { name: "นายภูริพัทธ์ เปี่ยมเจริญ", class: "ม.6/4", no: 9 }, "12479": { name: "นายทิฐินันท์ จาดนอก", class: "ม.6/4", no: 10 }, "12480": { name: "นายสุทธินนท์ สุทธิเดช", class: "ม.6/4", no: 11 }, "11465": { name: "นางสาวภัทรภรณ์ นาควัน", class: "ม.6/4", no: 12 }, "11505": { name: "นางสาววิยะฎา อุตรี", class: "ม.6/4", no: 13 }, "11538": { name: "นางสาววีระตา สืบสุนทร", class: "ม.6/4", no: 14 }, "11567": { name: "นางสาวสลิลทิพย์ เจริญดง", class: "ม.6/4", no: 15 }, "11568": { name: "นางสาวสุชาดา อนันต์นิล", class: "ม.6/4", no: 16 }, "11569": { name: "นางสาวสุพิชฌาย์ กำเหนิด", class: "ม.6/4", no: 17 }, "11593": { name: "นางสาวกมลรัตน์ พืชนะผล", class: "ม.6/4", no: 18 }, "11604": { name: "นางสาวอรวินท์ สุดสังข์", class: "ม.6/4", no: 19 }, "11671": { name: "นางสาวอิมวา แสนขวา", class: "ม.6/4", no: 20 }, "11949": { name: "นางสาวภัทรณนิดา กุลชัย", class: "ม.6/4", no: 21 }, "12481": { name: "นางสาวรุ้งลาวัลย์ สายสังข์", class: "ม.6/4", no: 22 }, "12488": { name: "นางสาวธัญรัตน์ แตงรอด", class: "ม.6/4", no: 23 }, "12778": { name: "นางสาวอภิญญา งามสม", class: "ม.6/4", no: 24 }
+    };
+
+    let currentUser = null;
+    let slideIndex = 0;
+    let quizScore = 0;
+    let currentQuizSet = []; 
+
+    // --- QUESTION BANK (20 ITEMS) ---
+    const questionPool = [
+        { q: "Main Idea คืออะไร?", choices: ["ตัวอย่างประกอบ", "ประเด็นหลักของเรื่อง", "ประโยคสุดท้ายเสมอ"], ans: "ประเด็นหลักของเรื่อง" },
+        { q: "Topic Sentence มักจะอยู่ที่ไหนของย่อหน้า?", choices: ["ประโยคแรก", "ตรงกลาง", "ประโยคสุดท้าย"], ans: "ประโยคแรก" },
+        { q: "Supporting Details (SDs) มีหน้าที่อะไร?", choices: ["สรุปเรื่อง", "ขยายความ Main Idea", "ตั้งชื่อเรื่อง"], ans: "ขยายความ Main Idea" },
+        { q: "ข้อใด *ไม่ใช่* ประเภทของ Supporting Details?", choices: ["Examples (ตัวอย่าง)", "Reasons (เหตุผล)", "Main Idea (ใจความหลัก)"], ans: "Main Idea (ใจความหลัก)" },
+        { q: "คำว่า 'For example' มักจะนำหน้าประโยคแบบใด?", choices: ["Main Idea", "Supporting Detail", "Conclusion"], ans: "Supporting Detail" },
+        { q: "คำว่า 'First, Second, Finally' มักใช้บอกอะไร?", choices: ["ลำดับเหตุการณ์หรือเหตุผล", "ชื่อเรื่อง", "ใจความสำคัญ"], ans: "ลำดับเหตุการณ์หรือเหตุผล" },
+        { q: "ประโยค Irrelevant Sentence คืออะไร?", choices: ["ประโยคที่สำคัญที่สุด", "ประโยคที่ไม่เกี่ยวข้องกับเรื่อง", "ประโยคสรุป"], ans: "ประโยคที่ไม่เกี่ยวข้องกับเรื่อง" },
+        { q: "จากประโยค: 'Dogs are loyal friends.' น่าจะเป็น?", choices: ["Main Idea", "Specific Detail", "Statistic"], ans: "Main Idea" },
+        { q: "จากประโยค: 'They wait for you at the door.' น่าจะเป็น?", choices: ["Main Idea", "Supporting Detail", "Title"], ans: "Supporting Detail" },
+        { q: "ถ้าย่อหน้าพูดเรื่อง 'ประโยชน์ของผัก' ประโยคไหนไม่เข้าพวก?", choices: ["ผักมีวิตามินเยอะ", "กินผักช่วยขับถ่าย", "ไอศกรีมอร่อยมาก"], ans: "ไอศกรีมอร่อยมาก" },
+        { q: "Topic Sentence ที่ดีควรบอกอะไร?", choices: ["บอกว่าย่อหน้านี้เกี่ยวกับอะไร", "บอกรายละเอียดลึกๆ", "บอกตัวเลขสถิติ"], ans: "บอกว่าย่อหน้านี้เกี่ยวกับอะไร" },
+        { q: "คำถามใดที่ SDs มักจะตอบ?", choices: ["What time is it?", "Why? / How?", "What is your name?"], ans: "Why? / How?" },
+        { q: "ในย่อหน้าหนึ่ง ควรมี Main Idea กี่ประเด็นหลัก?", choices: ["1 ประเด็น", "3 ประเด็น", "กี่ประเด็นก็ได้"], ans: "1 ประเด็น" },
+        { q: "Facts และ Statistics จัดเป็นส่วนประกอบใด?", choices: ["Topic", "Main Idea", "Supporting Details"], ans: "Supporting Details" },
+        { q: "'Exercising makes you strong.' ประโยคนี้คือ?", choices: ["Reason (เหตุผล)", "Example (ตัวอย่าง)", "Topic"], ans: "Reason (เหตุผล)" },
+        { q: "ถ้า Topic คือ 'My Favorite Fruit' ข้อใดคือ MI ที่ดี?", choices: ["I like mangoes because they are sweet.", "Fruits are expensive.", "There are many fruits."], ans: "I like mangoes because they are sweet." },
+        { q: "การหา Main Idea เปรียบเหมือนการหาอะไร?", choices: ["กุญแจสำคัญของห้อง", "หน้าต่าง", "พรมเช็ดเท้า"], ans: "กุญแจสำคัญของห้อง" },
+        { q: "ถ้าเราตัด Supporting Details ออก จะเกิดอะไรขึ้น?", choices: ["เรื่องจะไม่ชัดเจน", "เรื่องจะสมบูรณ์ขึ้น", "ไม่มีผลอะไร"], ans: "เรื่องจะไม่ชัดเจน" },
+        { q: "ประโยคใด *ไม่ใช่* Main Idea?", choices: ["Cats are cute pets.", "Smoking is bad for health.", "For instance, it causes cancer."], ans: "For instance, it causes cancer." },
+        { q: "ย่อหน้าที่ดีต้องมีความเป็นเอกภาพ (Unity) หมายถึง?", choices: ["ทุกประโยคพูดเรื่องเดียวกัน", "ใช้คำศัพท์ยากๆ", "เขียนยาวๆ"], ans: "ทุกประโยคพูดเรื่องเดียวกัน" }
+    ];
+
+    // --- BASE SLIDES ---
+    const baseSlides = [
+        // 0-3: Intro & Theory
+        { type: "intro", title: "Unit 3: Understanding Paragraphs", html: `<p><b>จุดประสงค์การเรียนรู้:</b></p><ul><li>ระบุ <b>Topic Sentence</b></li><li>แยกแยะ <b>Main Idea</b> และ <b>Supporting Details</b></li></ul><p>บทเรียนนี้เน้นความเข้าใจที่ถ่องแท้ (Challenge Mode)</p>` },
+        { type: "read", title: "1. Main Idea (ใจความสำคัญ)", html: `<p class="highlight">Main Idea คือ "ความคิดหลัก" ที่ผู้เขียนต้องการสื่อ</p><p>🔎 <b>Tip:</b> มักเป็นประโยคแรก (Topic Sentence) ที่บอกว่าย่อหน้านี้เกี่ยวกับอะไร</p>` },
+        { type: "read", title: "2. Supporting Details (SDs)", html: `<p class="highlight">Supporting Details คือ "ข้อมูลสนับสนุน"</p><p>ทำหน้าที่ขยายความ ตอบคำถาม <i>Why? How?</i></p><p><b>ได้แก่:</b> ตัวอย่าง (Examples), เหตุผล (Reasons), สถิติ (Facts)</p>` },
+        { type: "read", title: "ตัวอย่างการวิเคราะห์", html: `<div style="background:white; border:1px solid #ddd; padding:15px; border-radius:8px; margin-bottom:15px;"><span style="color:#00695c; font-weight:bold;">[MI] Studying in a group has benefits.</span> <span style="color:#d81b60;">[SD] First, students can help each other.</span> <span style="color:#d81b60;">[SD] Second, it is more fun.</span></div>` },
+
+        // 4-6: Exercises
+        { type: "exercise", id: 1, title: "Exercise 1: Basic", desc: "จิ้มระบุ: <b>Main Idea (1)</b> และ <b>SDs (2)</b>", 
+          sentences: ["There are many reasons to exercise.", "First, it makes muscles strong.", "Second, it reduces stress.", "Research shows it helps you sleep.", "Finally, it is fun."], ansMI: 0, ansSD: [1, 2, 3, 4] },
+        { type: "exercise", id: 2, title: "Exercise 2: Intermediate", desc: "จิ้มระบุ: <b>Main Idea (1)</b> และ <b>SDs (2)</b>", 
+          sentences: ["Smartphone addiction is a problem.", "Eyesight can get worse from staring at screens.", "Another issue is lack of sleep.", "Many people use phones in bed.", "It also hurts relationships."], ansMI: 0, ansSD: [1, 2, 3, 4] },
+        { type: "exercise", id: 3, title: "Exercise 3: Advanced (New!)", desc: "⚠️ <b>ข้อยาก:</b> จิ้มระบุ <b>Main Idea (1)</b> และ <b>SDs (3)</b>", 
+          sentences: ["Social media has both pros and cons.", "On the positive side, it connects friends.", "It also provides useful news.", "However, it can waste our time.", "Cyberbullying is another negative effect.", "Users must use it wisely."], 
+          ansMI: 0, ansSD: [1, 2, 3, 4] 
+        },
+
+        // 7-8: Game
+        { type: "read", title: "Game: Paragraph Builder", html: `<p><b>ภารกิจ:</b> เรียงประโยคให้เป็นย่อหน้าที่สมบูรณ์</p><p style="color:red; font-weight:bold;">⚠️ ตัดประโยคที่ไม่เกี่ยวข้อง (Irrelevant) ทิ้ง 1 ประโยค!</p>` },
+        { type: "game", title: "Builder Challenge", items: [
+            {id: 'A', txt: "(A) It gives energy for the day."},
+            {id: 'B', txt: "(B) Breakfast is important."},
+            {id: 'C', txt: "(C) Students concentrate better."},
+            {id: 'D', txt: "(D) Coffee is popular."}
+        ], answer: ['B', 'A', 'C'] },
+
+        // 9: Quiz Intro
+        { type: "quiz-intro", title: "Final Challenge Quiz", html: `<div style="text-align:center; font-size:3em;">😈</div><p><b>แบบทดสอบวัดผล (10 ข้อ)</b></p><p></p><p class="highlight" style="color:#c62828; background:#ffebee;"><b>เกณฑ์ผ่าน: ต้องได้คะแนนเต็ม 10/10 เท่านั้น!</b></p><p style="font-size:0.9em; color:#666;"></p>` }
+    ];
+
+    let currentSessionSlides = []; 
+
+    // --- UTILS ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function generateQuizSet() {
+        const shuffledPool = shuffleArray([...questionPool]);
+        const selectedQuestions = shuffledPool.slice(0, 10);
+        const quizSlides = selectedQuestions.map(qObj => {
+            let opts = [...qObj.choices];
+            opts = shuffleArray(opts);
+            const correctIdx = opts.indexOf(qObj.ans);
+            return {
+                type: "quiz",
+                q: qObj.q,
+                options: opts,
+                ans: correctIdx
+            };
+        });
+        return quizSlides;
+    }
+
+    // --- LOGIC ---
+
+    function checkLogin() {
+        const id = document.getElementById('inputID').value.trim();
+        
+        if (students[id]) {
+            currentUser = students[id];
+            currentUser.id = id;
+            document.getElementById('userDisplay').innerText = currentUser.name;
+            document.getElementById('screen-login').classList.remove('active');
+            
+            // Prepare Slides
+            const randomQuizzes = generateQuizSet();
+            currentSessionSlides = [...baseSlides, ...randomQuizzes];
+            slideIndex = 0;
+            
+            renderSlide();
+        } else {
+            alert("ไม่พบรหัสนักเรียนค่ะ (กรุณากรอกเฉพาะตัวเลข)");
+        }
+    }
+
+    function renderSlide() {
+        document.getElementById('screen-lesson').innerHTML = ""; 
+        document.getElementById('screen-lesson').style.display = "none";
+        document.getElementById('screen-result').innerHTML = ""; 
+        document.getElementById('screen-result').style.display = "none";
+
+        if (slideIndex >= currentSessionSlides.length) {
+            showResult();
+            return;
+        }
+
+        const s = currentSessionSlides[slideIndex];
+        const screen = document.getElementById('screen-lesson');
+        screen.style.display = "flex"; 
+        screen.classList.add('active');
+
+        if (s.type === 'quiz-intro') quizScore = 0;
+
+        let html = `<h2>${s.title || "Question " + (slideIndex - baseSlides.length + 1)}</h2>`;
+
+        if (['intro', 'read', 'quiz-intro'].includes(s.type)) {
+            html += `<div class="content-box">${s.html}</div>`;
+            html += renderNav(true);
+        }
+        else if (s.type === 'exercise') {
+            html += `<p class="instruction">${s.desc}</p>`;
+            html += `<div id="ex-area" class="content-box"></div>`;
+            html += `<button class="btn btn-primary" onclick="checkExercise(${s.id})">ตรวจคำตอบ</button>`;
+        }
+        else if (s.type === 'game') {
+            html += `<p class="instruction">แตะประโยคเพื่อเลือก (3 ประโยค)</p>`;
+            html += `<div class="ans-slot" id="game-slot">ลำดับ: -</div>`;
+            html += `<div class="sort-area" id="sort-area"></div>`;
+            html += `<div class="btn-nav-group"><button class="btn btn-secondary" onclick="resetGame()">ล้าง</button><button class="btn btn-primary" onclick="checkGame()">ส่งคำตอบ</button></div>`;
+        }
+        else if (s.type === 'quiz') {
+            html += `<div class="quiz-container">
+                        <div class="quiz-progress">ข้อที่ ${slideIndex - baseSlides.length + 1} / 10</div>
+                        <div class="content-box" style="font-weight:bold; font-size:1.2em;">${s.q}</div>
+                        <div id="quiz-options"></div>
+                     </div>`;
+        }
+
+        screen.innerHTML = `<div style="width:100%;">${html}</div>`;
+
+        if (s.type === 'exercise') initExercise(s);
+        if (s.type === 'game') initGame(s);
+        if (s.type === 'quiz') initQuiz(s);
+    }
+
+    function renderNav(showBack) {
+        let backBtn = (showBack && slideIndex > 0) ? `<button class="btn btn-secondary" onclick="prevSlide()">⬅️ ย้อนกลับ</button>` : `<div></div>`;
+        return `<div class="btn-nav-group">${backBtn}<button class="btn btn-primary" style="width:auto;" onclick="nextSlide()">ไปต่อ ➡️</button></div>`;
+    }
+
+    function nextSlide() { slideIndex++; renderSlide(); }
+    function prevSlide() { slideIndex--; renderSlide(); }
+
+    // --- EXERCISE ---
+    let exSel = { mi: null, sd: [] };
+    function initExercise(s) {
+        exSel = { mi: null, sd: [] };
+        const area = document.getElementById('ex-area');
+        s.sentences.forEach((txt, idx) => {
+            let div = document.createElement('div');
+            div.className = 'sentence-item';
+            div.innerText = txt;
+            div.onclick = () => toggleSentence(div, idx, s.id);
+            area.appendChild(div);
+        });
+    }
+
+    function toggleSentence(el, idx, exId) {
+        const maxSD = exId === 3 ? 3 : 2; 
+        if (exSel.mi === null) {
+            exSel.mi = idx; el.classList.add('sel-mi');
+            alert(`เลือก Main Idea แล้วค่ะ\nเลือก Supporting Details อีก ${maxSD} ประโยคค่ะ`);
+        } else if (exSel.mi !== idx) {
+            if (idx === exSel.mi) {
+                exSel.mi = null; el.classList.remove('sel-mi');
+            } else {
+                if (exSel.sd.includes(idx)) {
+                    exSel.sd = exSel.sd.filter(i => i !== idx); el.classList.remove('sel-sd');
+                } else {
+                    if (exSel.sd.length < maxSD) {
+                        exSel.sd.push(idx); el.classList.add('sel-sd');
+                    } else {
+                        alert(`เลือก SD ครบ ${maxSD} ประโยคแล้วค่ะ`);
+                    }
+                }
+            }
+        }
+    }
+
+    function checkExercise(exId) {
+        const s = currentSessionSlides[slideIndex];
+        const reqSD = exId === 3 ? 3 : 2;
+        
+        if (exSel.mi === null || exSel.sd.length < reqSD) { alert("กรุณาเลือกให้ครบตามโจทย์ค่ะ"); return; }
+        
+        let miOk = (exSel.mi === s.ansMI);
+        let sdOk = exSel.sd.every(v => s.ansSD.includes(v));
+
+        if (miOk && sdOk) { alert("🎉 ถูกต้องค่ะ! เก่งมาก"); nextSlide(); }
+        else { alert("❌ ยังไม่ถูกนะคะ ลองอ่านทบทวนอีกครั้ง"); renderSlide(); }
+    }
+
+    // --- GAME ---
+    let gamePicks = [];
+    function initGame(s) {
+        gamePicks = [];
+        const area = document.getElementById('sort-area');
+        s.items.forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'sort-card';
+            div.innerText = item.txt;
+            div.onclick = () => pickGameItem(item.id, div);
+            area.appendChild(div);
+        });
+    }
+    function pickGameItem(id, el) {
+        if (gamePicks.length >= 3 || gamePicks.includes(id)) return;
+        gamePicks.push(id); el.classList.add('picked');
+        document.getElementById('game-slot').innerText = gamePicks.join(" ➔ ");
+    }
+    function resetGame() { gamePicks = []; renderSlide(); }
+    function checkGame() {
+        const s = currentSessionSlides[slideIndex];
+        if (JSON.stringify(gamePicks) === JSON.stringify(s.answer)) { alert("🎉 ถูกต้องค่ะ!"); nextSlide(); }
+        else { alert("❌ ลำดับผิดค่ะ ลองใหม่นะ"); resetGame(); }
+    }
+
+    // --- QUIZ ---
+    function initQuiz(s) {
+        const area = document.getElementById('quiz-options');
+        s.options.forEach((opt, idx) => {
+            let btn = document.createElement('button');
+            btn.className = 'quiz-option';
+            btn.innerText = opt;
+            btn.onclick = () => answerQuiz(btn, idx, s.ans);
+            area.appendChild(btn);
+        });
+    }
+
+    function answerQuiz(btn, selected, correct) {
+        const allBtns = document.querySelectorAll('.quiz-option');
+        allBtns.forEach(b => b.classList.add('locked')); 
+
+        if (selected === correct) {
+            btn.classList.add('correct');
+            quizScore++;
+            setTimeout(() => nextSlide(), 500); 
+        } else {
+            btn.classList.add('wrong');
+            allBtns[correct].classList.add('correct'); 
+            setTimeout(() => nextSlide(), 1500); 
+        }
+    }
+
+    // --- RESULT ---
+    function showResult() {
+        document.getElementById('screen-lesson').style.display = "none";
+        const resScreen = document.getElementById('screen-result');
+        resScreen.style.display = "flex";
+        
+        const passed = (quizScore === 10);
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        const refCode = "P-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        if (passed) {
+            resScreen.innerHTML = `
+                <h2 style="color:var(--primary)">Mission Complete!</h2>
+                <div class="cert-card">
+                    <div class="watermark-container" id="wm-area"></div>
+                    <div class="cert-content">
+                        <div class="cert-header">Certificate of Excellence</div>
+                        <h3 class="cert-title">Paragraph Master</h3>
+                        <p>ขอมอบวุฒิบัตรนี้เพื่อแสดงว่า</p>
+                        <div class="cert-name">${currentUser.name}</div>
+                        <p>${currentUser.class} | เลขที่ ${currentUser.no}</p>
+                        <div class="cert-score">10/10</div>
+                        <p style="color:green; font-weight:bold;">FULL SCORE</p>
+                        <div style="margin-top:20px; font-size:0.8em; color:#777; border-top:1px dashed #ccc; padding-top:10px;">
+                            วันที่: ${dateStr} เวลา ${timeStr}<br>Ref Code: ${refCode}
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top:20px; color:#666; font-size:0.9em;">📸 แคปหน้าจอนี้ส่งครูได้เลยค่ะ</p>
+                <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:15px;">ออกจากระบบ</button>
+            `;
+            
+            const wm = document.getElementById('wm-area');
+            const txt = `${currentUser.id} ${currentUser.name}`;
+            for(let i=0; i<15; i++) {
+                let s = document.createElement('div');
+                s.className = 'wm-item';
+                s.innerText = txt;
+                wm.appendChild(s);
+            }
+        } else {
+            resScreen.innerHTML = `
+                <div class="mission-fail" style="width:100%;">
+                    <div style="font-size:4em;">😢</div>
+                    <h2 style="color:#c62828;">Mission Failed</h2>
+                    <p style="font-size:1.4em; font-weight:bold;">คุณทำได้ ${quizScore}/10 คะแนน</p>
+                    <p>เกณฑ์ผ่าน: 10/10 คะแนนเต็มเท่านั้น</p>
+                    <p style="color:#666; font-size:0.9em;">สู้ๆ นะคะ ลองทำใหม่อีกครั้งน้าาา!</p>
+                    <button class="btn btn-primary" onclick="restartQuiz()">↺ เริ่มทำแบบทดสอบใหม่</button>
+                </div>
+            `;
+        }
+    }
+
+    function restartQuiz() {
+        quizScore = 0;
+        const newQuizzes = generateQuizSet();
+        currentSessionSlides = [...baseSlides, ...newQuizzes];
+        slideIndex = baseSlides.length - 1; 
+        renderSlide();
+    }
+
+    // --- ADMIN RESET ---
+    function adminReset() {
+        const targetSecret = "UGFsb2xpaXo="; // Paloliiz in Base64
+        let input = prompt("🔐 Admin Reset (ใส่รหัสลับ):");
+        try {
+            if (input && btoa(input) === targetSecret) {
+                localStorage.clear();
+                alert("✅ รีเซ็ตระบบเรียบร้อยค่ะ");
+                location.reload();
+            } else if (input) {
+                alert("❌ รหัสไม่ถูกต้องค่ะ");
+            }
+        } catch(e) { alert("❌ รหัสไม่ถูกต้องค่ะ"); }
+    }
+
+</script>
+
+</body>
+</html>
